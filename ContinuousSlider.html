@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Continuous Crypto Ticker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #E0E0E0;
+            overflow-x: hidden;
+        }
+
+        /* The container for the entire slider, hiding overflow */
+        .ticker-container {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            padding: 1.5rem 0;
+            border-top: 1px solid #222;
+            border-bottom: 1px solid #222;
+        }
+
+        /* The wrapper for the cards, which is animated */
+        .ticker-wrapper {
+            display: flex;
+            animation: ticker 60s linear infinite;
+        }
+
+        /* Pause the animation on hover for user control */
+        .ticker-wrapper:hover {
+            animation-play-state: paused;
+        }
+
+        /* Define the continuous sliding animation */
+        @keyframes ticker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .crypto-card {
+            flex-shrink: 0;
+            width: 250px;
+            background-color: #1E1E1E;
+            border: 1px solid #2c2c2c;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-right: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        @media (min-width: 640px) {
+            .crypto-card {
+                width: 300px;
+            }
+        }
+
+        .crypto-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .change-up {
+            color: #10B981;
+            transition: color 0.5s ease-in-out;
+        }
+
+        .change-down {
+            color: #EF4444;
+            transition: color 0.5s ease-in-out;
+        }
+
+        /* Pulsing animation for price changes */
+        .pulsate-green {
+            animation: pulsateGreen 1s ease-out;
+        }
+        
+        .pulsate-red {
+            animation: pulsateRed 1s ease-out;
+        }
+
+        @keyframes pulsateGreen {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes pulsateRed {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center justify-center py-12">
+    <div class="container mx-auto px-4">
+        <h1 class="text-3xl font-bold text-center mb-8">Crypto Market Live Ticker</h1>
+        <p class="text-center text-gray-400 mb-8">Hover to pause and check the details.</p>
+
+        <div class="ticker-container">
+            <!-- We use two identical wrappers to create a seamless infinite loop -->
+            <div class="ticker-wrapper" id="ticker-1"></div>
+            <div class="ticker-wrapper" aria-hidden="true" id="ticker-2"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const cryptoData = [
+            { id: 1, name: 'Bitcoin', symbol: 'BTC', price: 68123.45, change: 1.5, icon: 'https://placehold.co/40x40/121212/E0E0E0?text=BTC' },
+            { id: 2, name: 'Ethereum', symbol: 'ETH', price: 3543.21, change: -0.75, icon: 'https://placehold.co/40x40/121212/E0E0E0?text=ETH' },
+            { id: 3, name: 'Solana', symbol: 'SOL', price: 155.89, change: 2.1, icon: 'https://placehold.co/40x40/121212/E0E0E0?text=SOL' },
+            { id: 4, name: 'BNB', symbol: 'BNB', price: 590.10, change: -1.2, icon: 'https://placehold.co/40x40/121212/E0E0E0?text=BNB' },
+            { id: 5, name: 'Ripple', symbol: 'XRP', price: 0.52, change: 0.45, icon: 'https://placehold.co/40x40/121212/E0E0E0?text=XRP' },
+            { id: 6, name: 'Cardano', symbol: 'ADA', price: 0.45, change: -0.9, icon: 'https://placehold.co/40x40/121212/E0E0E0?text=ADA' },
+            { id: 7, name: 'Dogecoin', symbol: 'DOGE', price: 0.15, change: 3.1, icon: 'https://placehold.co/40x40/121212/E0E0E0?text=DOGE' },
+            { id: 8, name: 'Avalanche', symbol: 'AVAX', price: 40.23, change: -2.5, icon: 'https://placehold.co/40x40/121212/E0E0E0?text=AVAX' },
+            { id: 9, name: 'Polkadot', symbol: 'DOT', price: 7.88, change: 0.88, icon: 'https://placehold.co/40x40/121212/E0E0E0?text=DOT' },
+            { id: 10, name: 'Litecoin', symbol: 'LTC', price: 80.50, change: 1.1, icon: 'https://placehold.co/40x40/121212/E0E0E0?text=LTC' }
+        ];
+
+        function createCard(data) {
+            const isPositive = data.change >= 0;
+            const changeColorClass = isPositive ? 'text-green-500' : 'text-red-500';
+            const changeArrow = isPositive ? '↑' : '↓';
+
+            return `
+                <div class="crypto-card">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <img src="${data.icon}" onerror="this.onerror=null;this.src='https://placehold.co/40x40/121212/E0E0E0?text=NA';" class="w-10 h-10 rounded-full bg-gray-700 p-1" alt="${data.name} icon">
+                        <div>
+                            <div class="text-xl font-semibold">${data.symbol}</div>
+                            <div class="text-sm text-gray-400">${data.name}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <div>
+                            <div class="text-3xl font-bold">$${data.price.toFixed(2)}</div>
+                        </div>
+                        <div class="text-right">
+                            <div id="change-${data.id}" class="font-bold text-lg ${changeColorClass} transition-colors duration-500">${changeArrow} ${Math.abs(data.change).toFixed(2)}%</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const ticker1 = document.getElementById('ticker-1');
+        const ticker2 = document.getElementById('ticker-2');
+
+        function renderCards() {
+            const cardsHtml = cryptoData.map(createCard).join('');
+            ticker1.innerHTML = cardsHtml;
+            ticker2.innerHTML = cardsHtml;
+        }
+
+        function updatePrices() {
+            cryptoData.forEach(coin => {
+                const change = (Math.random() * 5 - 2.5).toFixed(2);
+                const oldPrice = coin.price;
+                const newPrice = oldPrice * (1 + change / 100);
+                coin.change = parseFloat(change);
+                coin.price = newPrice;
+
+                const element = document.getElementById(`change-${coin.id}`);
+                const isPositive = coin.change >= 0;
+                
+                if (element) {
+                    element.innerHTML = `${isPositive ? '↑' : '↓'} ${Math.abs(coin.change).toFixed(2)}%`;
+                    element.className = `font-bold text-lg transition-colors duration-500 ${isPositive ? 'text-green-500' : 'text-red-500'}`;
+                
+                    element.classList.remove('pulsate-green', 'pulsate-red');
+                    void element.offsetWidth; // Trigger reflow
+                    if (isPositive) {
+                        element.classList.add('pulsate-green');
+                    } else {
+                        element.classList.add('pulsate-red');
+                    }
+                }
+            });
+            renderCards();
+        }
+
+        renderCards();
+        setInterval(updatePrices, 3000);
+    </script>
+</body>
+</html>
